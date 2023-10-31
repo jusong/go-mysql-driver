@@ -678,3 +678,28 @@ func (mc *mysqlConn) ResetSession(ctx context.Context) error {
 func (mc *mysqlConn) IsValid() bool {
 	return !mc.closed.Load()
 }
+
+// ResetConnection Resets the session state
+// A more lightweightt version of COM_CHANGE_USER that does about the same to
+// clean up the session state, but:
+//
+// it does not re-authenticate (and do the extra client/server exchange for that)
+// it does not close the connection
+func (mc *mysqlConn) ResetConnection(ctx context.Context) (err error) {
+	if mc.closed.Load() {
+		mc.cfg.Logger.Print(ErrInvalidConn)
+		return driver.ErrBadConn
+	}
+
+	if err = mc.watchCancel(ctx); err != nil {
+		return
+	}
+	defer mc.finish()
+
+	handleOk := mc.clearResult()
+	if err = mc.writeCommandPacket(comResetConnection); err != nil {
+		return mc.markBadConn(err)
+	}
+
+	return handleOk.readResultOK()
+}

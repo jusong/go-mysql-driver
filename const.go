@@ -99,6 +99,7 @@ const (
 	comStmtReset
 	comSetOption
 	comStmtFetch
+	comResetConnection = 0x1F
 )
 
 // https://dev.mysql.com/doc/internals/en/com-query-response.html#packet-Protocol::ColumnType
